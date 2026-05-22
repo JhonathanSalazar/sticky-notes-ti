@@ -6,9 +6,10 @@ interface StickyNoteProps {
   onMoveStart: (e: MouseEvent, noteId: string) => void
   onResizeStart: (e: MouseEvent, noteId: string) => void
   onContentChange: (noteId: string, content: string) => void
+  onContentBlur: (noteId: string) => void
 }
 
-export default function StickyNote({ note, onMoveStart, onResizeStart, onContentChange }: StickyNoteProps) {
+export default function StickyNote({ note, onMoveStart, onResizeStart, onContentChange, onContentBlur }: StickyNoteProps) {
   return (
     <div
       className="note"
@@ -29,6 +30,7 @@ export default function StickyNote({ note, onMoveStart, onResizeStart, onContent
         value={note.content}
         placeholder="Type your note..."
         onChange={(e) => onContentChange(note.id, e.target.value)}
+        onBlur={() => onContentBlur(note.id)}
       />
       <div
         className="resize-handle"

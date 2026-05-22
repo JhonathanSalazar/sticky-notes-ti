@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react'
 import StickyNote from './StickyNote'
 import TrashZone from './TrashZone'
+import { api } from './api'
 import type { DragState, Note } from './types'
 import './App.css'
 
-const STORAGE_KEY = 'sticky-notes'
 const NOTE_COLORS = ['#fff9c4', '#c8e6c9', '#bbdefb', '#f8bbd0', '#ffe0b2', '#e1bee7']
 
 function randomColor(): string {
@@ -24,27 +24,26 @@ function createNote(x: number, y: number): Note {
 }
 
 export default function App() {
-  const [notes, setNotes] = useState<Note[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY)
-      return saved ? (JSON.parse(saved) as Note[]) : []
-    } catch {
-      return []
-    }
-  })
+  const [notes, setNotes] = useState<Note[]>([])
   const [isOverTrash, setIsOverTrash] = useState(false)
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(notes))
-  }, [notes])
+  // Mirror notes into a ref so mouseup handlers can read current state
+  // without stale closure issues (the drag useEffect has [] deps)
+  const notesRef = useRef<Note[]>([])
+  useEffect(() => { notesRef.current = notes }, [notes])
 
-  // useRef keeps drag state without causing re-renders on every mouse move
   const dragRef = useRef<DragState>(null)
   const trashRef = useRef<HTMLDivElement>(null)
 
+  useEffect(() => {
+    api.getAll().then(setNotes)
+  }, [])
+
   const handleCanvasDoubleClick = useCallback((e: MouseEvent<HTMLDivElement>) => {
     if ((e.target as HTMLElement).closest('.note')) return
-    setNotes((prev) => [...prev, createNote(e.clientX, e.clientY)])
+    const note = createNote(e.clientX, e.clientY)
+    setNotes((prev) => [...prev, note])
+    api.create(note)
   }, [])
 
   const handleMoveStart = useCallback((e: MouseEvent, noteId: string) => {
@@ -84,6 +83,11 @@ export default function App() {
     setNotes((prev) => prev.map((n) => (n.id === noteId ? { ...n, content } : n)))
   }, [])
 
+  const handleContentBlur = useCallback((noteId: string) => {
+    const note = notesRef.current.find((n) => n.id === noteId)
+    if (note) api.update(note)
+  }, [])
+
   useEffect(() => {
     const onMouseMove = (e: globalThis.MouseEvent) => {
       const drag = dragRef.current
@@ -121,18 +125,31 @@ export default function App() {
 
     const onMouseUp = (e: globalThis.MouseEvent) => {
       const drag = dragRef.current
-      if (drag?.kind === 'move') {
-        const trash = trashRef.current?.getBoundingClientRect()
-        if (
-          trash &&
-          e.clientX >= trash.left &&
-          e.clientX <= trash.right &&
-          e.clientY >= trash.top &&
-          e.clientY <= trash.bottom
-        ) {
+      if (!drag) return
+
+      const trash = trashRef.current?.getBoundingClientRect()
+      const isOverTrashZone =
+        !!trash &&
+        e.clientX >= trash.left &&
+        e.clientX <= trash.right &&
+        e.clientY >= trash.top &&
+        e.clientY <= trash.bottom
+
+      if (drag.kind === 'move') {
+        if (isOverTrashZone) {
           setNotes((prev) => prev.filter((n) => n.id !== drag.noteId))
+          api.remove(drag.noteId)
+        } else {
+          const note = notesRef.current.find((n) => n.id === drag.noteId)
+          if (note) api.update(note)
         }
       }
+
+      if (drag.kind === 'resize') {
+        const note = notesRef.current.find((n) => n.id === drag.noteId)
+        if (note) api.update(note)
+      }
+
       dragRef.current = null
       setIsOverTrash(false)
     }
@@ -157,6 +174,7 @@ export default function App() {
           onMoveStart={handleMoveStart}
           onResizeStart={handleResizeStart}
           onContentChange={handleContentChange}
+          onContentBlur={handleContentBlur}
         />
       ))}
       <TrashZone ref={trashRef} isOver={isOverTrash} />
