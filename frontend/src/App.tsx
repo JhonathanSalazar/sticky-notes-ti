@@ -4,6 +4,7 @@ import TrashZone from './TrashZone'
 import type { DragState, Note } from './types'
 import './App.css'
 
+const STORAGE_KEY = 'sticky-notes'
 const NOTE_COLORS = ['#fff9c4', '#c8e6c9', '#bbdefb', '#f8bbd0', '#ffe0b2', '#e1bee7']
 
 function randomColor(): string {
@@ -23,8 +24,19 @@ function createNote(x: number, y: number): Note {
 }
 
 export default function App() {
-  const [notes, setNotes] = useState<Note[]>([])
+  const [notes, setNotes] = useState<Note[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      return saved ? (JSON.parse(saved) as Note[]) : []
+    } catch {
+      return []
+    }
+  })
   const [isOverTrash, setIsOverTrash] = useState(false)
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(notes))
+  }, [notes])
 
   // useRef keeps drag state without causing re-renders on every mouse move
   const dragRef = useRef<DragState>(null)
