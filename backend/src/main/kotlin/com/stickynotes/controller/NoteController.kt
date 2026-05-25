@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 @RestController
 @RequestMapping("/api/notes")
-@CrossOrigin(origins = ["http://localhost:5173"])
+@CrossOrigin(origins = ["http://localhost:5173", "http://localhost"])
 class NoteController {
 
     private val notes = ConcurrentHashMap<String, Note>()
