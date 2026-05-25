@@ -1,6 +1,6 @@
 # Sticky Notes — Frontend
 
-A single-page sticky notes application built with React and TypeScript. Notes are persisted in `localStorage` so they survive page refreshes.
+A single-page sticky notes application built with React and TypeScript. Notes are persisted server-side via a REST API.
 
 ## Features
 
@@ -14,18 +14,21 @@ A single-page sticky notes application built with React and TypeScript. Notes ar
 - [React 19](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
 - [Vite](https://vite.dev/) — dev server and build tool
 - Plain CSS — no external UI libraries
-- `localStorage` — client-side persistence
+- REST API (Spring Boot backend) — server-side persistence
 
 ## Project structure
 
 ```
 src/
-  main.tsx        — app entry point
-  App.tsx         — root component: state, drag logic, localStorage
-  StickyNote.tsx  — individual note (header, textarea, resize handle)
-  TrashZone.tsx   — fixed trash drop zone
-  types.ts        — Note interface and DragState type
-  App.css         — all styles
+  main.tsx                        — app entry point
+  App.tsx                         — root component: notes state, API integration, loading/error handling
+  StickyNote.tsx                  — individual note (header, textarea, resize handle)
+  TrashZone.tsx                   — fixed trash drop zone
+  api.ts                          — fetch wrapper for all REST calls
+  types.ts                        — Note interface and DragState type
+  App.css                         — all styles
+  hooks/
+    useNoteInteractions.ts        — drag, resize, and delete interaction logic
 ```
 
 ## Running locally

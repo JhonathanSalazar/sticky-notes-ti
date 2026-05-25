@@ -1,4 +1,4 @@
-import type { MouseEvent } from 'react'
+import { memo, type MouseEvent } from 'react'
 import type { Note } from './types'
 
 interface StickyNoteProps {
@@ -9,7 +9,7 @@ interface StickyNoteProps {
   onContentBlur: (noteId: string) => void
 }
 
-export default function StickyNote({ note, onMoveStart, onResizeStart, onContentChange, onContentBlur }: StickyNoteProps) {
+const StickyNote = memo(function StickyNote({ note, onMoveStart, onResizeStart, onContentChange, onContentBlur }: StickyNoteProps) {
   return (
     <div
       className="note"
@@ -38,4 +38,6 @@ export default function StickyNote({ note, onMoveStart, onResizeStart, onContent
       />
     </div>
   )
-}
+})
+
+export default StickyNote
